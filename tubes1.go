@@ -4,27 +4,30 @@ import "fmt"
 
 const NMAX int = 100
 
+type arrPositif [NMAX]string
+type arrNegatif [NMAX]string
 type arrKata [NMAX]string
 type arrKomentar [NMAX]comment
 type comment struct {
-	isi              arrKata
-	positif, negatif string
-	sentimen         string
-	nilaiSentimen    int
-	pjgteks          int
-	isialfabetis     arrKata
-	jumlahKata       int
-	jumlahPositif    int
-	jumlahNegatif    int
+	isi           arrKata
+	sentimen      string
+	nilaiSentimen int
+	pjgteks       int
+	isialfabetis  arrKata
+	jumlahKata    int
+	jumlahPositif int
+	jumlahNegatif int
 }
 
 func main() {
+	var positif arrPositif
+	var negatif arrNegatif
 	var komentar arrKomentar
-	var jumlahData int
+	var jumlahData, jumDataPositif, jumDataNegatif, jumDataNetral int
 	isiKomen(&komentar, &jumlahData)
-	sentimenNegatif(&komentar, &jumlahData)
-	sentimenPositif(&komentar, &jumlahData)
-	sentimen(&komentar, &jumlahData)
+	sentimenNegatif(&negatif)
+	sentimenPositif(&positif)
+	sentimen(&komentar, &jumlahData, &jumDataPositif, &jumDataNegatif, &jumDataNetral, &positif, &negatif)
 	//Tampilan utama untuk menentukan pilihan menu lainnya
 	var pilihanMenuUtama int
 	for pilihanMenuUtama != 7 {
@@ -41,13 +44,14 @@ func main() {
 		fmt.Println("==============================================")
 		fmt.Print("   Pilih menu: ")
 		fmt.Scan(&pilihanMenuUtama)
+		fmt.Println("==============================================")
 		switch pilihanMenuUtama {
 		case 1:
 			//Menu menambah komentar
-			menuTambahKomentar(&komentar, &jumlahData)
+			menuTambahKomentar(&komentar, &jumlahData, &jumDataPositif, &jumDataNegatif, &jumDataNetral, &positif, &negatif)
 		case 2:
 			//Menu mengubah komentar
-			menuUbahKomentar(&komentar, &jumlahData)
+			menuUbahKomentar(&komentar, &jumlahData, &jumDataPositif, &jumDataNegatif, &jumDataNetral, &positif, &negatif)
 		case 3:
 			//Menu menghapus komentar
 			menuHapusKomentar(&komentar, &jumlahData)
@@ -59,7 +63,7 @@ func main() {
 			statistik(&komentar, &jumlahData)
 		case 6:
 			//Menu cetak komentar
-			menuDaftarKomentar(&komentar, &jumlahData)
+			menuDaftarKomentar(&komentar, &jumlahData, &jumDataPositif, &jumDataNegatif, &jumDataNetral, &positif, &negatif)
 		case 7:
 			//Menu Keluar
 			menuKeluar()
@@ -69,7 +73,7 @@ func main() {
 	}
 }
 
-func menuTambahKomentar(komentar *arrKomentar, jumlahData *int) {
+func menuTambahKomentar(komentar *arrKomentar, jumlahData, jumDataPositif, jumDataNegatif, jumDataNetral *int, positif *arrPositif, negatif *arrNegatif) {
 	/* I.S. Terdefinisi array dinamis arrKomentar, i integer, dan jumlahData integer
 	   Proses: Menambahkan komentar (string) ke dalam array komentar[].isi
 	   F.S. Array yang terisi dengan komentar (string) dan jumlahData yang berubah  */
@@ -96,22 +100,24 @@ func menuTambahKomentar(komentar *arrKomentar, jumlahData *int) {
 			idxKomentar++
 			j++
 			*jumlahData++
-
+			fmt.Println("==============================================")
+			fmt.Println("|        Komentar berhasil ditambahkan       |")
+			fmt.Println("==============================================")
 		}
-		fmt.Println("==============================================")
-		fmt.Println("|        Komentar berhasil ditambahkan       |")
+		sentimen(komentar, jumlahData, jumDataPositif, jumDataNegatif, jumDataNetral, positif, negatif)
+		daftarKomentar(komentar, jumlahData)
 	} else {
 		fmt.Println("==============================================")
 		fmt.Println("|           Daftar komentar penuh!           |")
+		fmt.Println("==============================================")
 	}
-	sentimen(komentar, jumlahData)
 	return
 }
 
 func tampilanUtama() {
 	fmt.Println("==============================================")
-	fmt.Printf("|                    ADMIN                    |\n")
-	fmt.Printf("|          ANALISIS SENTIMEN KOMENTAR         |\n")
+	fmt.Println("|                   ADMIN                    |")
+	fmt.Println("|          ANALISIS SENTIMEN KOMENTAR        |")
 	fmt.Println("==============================================")
 }
 
@@ -146,7 +152,7 @@ func menuCariKomentar(komentar *arrKomentar, jumlahData *int) {
 				fmt.Println()
 				fmt.Println("==============================================")
 			} else {
-				fmt.Println("   Komentar tidak ditemukan          ")
+				fmt.Println("|          Komentar tidak ditemukan          |")
 				fmt.Println("==============================================")
 			}
 			return
@@ -164,7 +170,7 @@ func menuCariKomentar(komentar *arrKomentar, jumlahData *int) {
 				fmt.Println()
 				fmt.Println("==============================================")
 			} else {
-				fmt.Println("   Komentar tidak ditemukan          ")
+				fmt.Println("|          Komentar tidak ditemukan          |")
 				fmt.Println("==============================================")
 			}
 			return
@@ -255,53 +261,40 @@ func urutAlfabetAsc(komentar *arrKomentar, jumlahData *int) {
 			komentar[i].isialfabetis[j] = tempKata
 		}
 	}
-	//Menampilkan komentar yang sudah terurut
-	fmt.Println("==============================================")
-	fmt.Println("|            DAFTAR KOMENTAR ALFABETIS       |")
-	fmt.Println("==============================================")
-	if *jumlahData == 0 {
-		fmt.Println("|          Komentar tidak tersedia!          |")
-	} else {
-		for i := 0; i < *jumlahData; i++ {
-			fmt.Printf("   %d. ", i+1)
-			for j := 0; j < komentar[i].jumlahKata; j++ {
-				fmt.Printf("%s ", komentar[i].isialfabetis[j])
-			}
-			fmt.Println()
-		}
-	}
 }
 
-func menuUbahKomentar(komentar *arrKomentar, jumlahData *int) {
+func menuUbahKomentar(komentar *arrKomentar, jumlahData, jumDataPositif, jumDataNegatif, jumDataNetral *int, positif *arrPositif, negatif *arrNegatif) {
 	/* I.S. Terdefinisi array dinamis arrKomentar, i integer, dan jumlahData integer
 	Proses: Memilih melakukan mengubah komentar yang dipilih berdasarkan nomor urut komentar
 	F.S. Menampilkan komentar yang telah diubah jika komentar ada */
 	var ubahIdx, jumKata int
 	tampilanUtama()
 	fmt.Println("|             MENU UBAH KOMENTAR             |")
+	fmt.Println("==============================================")
 	daftarKomentar(komentar, jumlahData)
 	if *jumlahData != 0 {
 		fmt.Print("   Ubah komentar nomor: ")
 		fmt.Scan(&ubahIdx)
-		for i := 0; i < *jumlahData; i++ {
-			if i == ubahIdx-1 {
-				fmt.Print("   Jumlah kata yang ingin ditambah: ")
-				fmt.Scan(&jumKata)
-				fmt.Print("   Ubah komentar menjadi: ")
-				for j := 0; j < jumKata; j++ {
-					fmt.Scan(&komentar[i].isi[j])
-					komentar[i].jumlahKata++
-				}
-				fmt.Println("   Komentar berhasil diperbarui")
-				daftarKomentar(komentar, jumlahData)
-				return
-			}
+		fmt.Print("   Jumlah kata yang ingin ditambah: ")
+		fmt.Scan(&jumKata)
+		fmt.Print("   Ubah komentar menjadi: ")
+		komentar[ubahIdx-1].jumlahKata = jumKata
+		for j := 0; j < jumKata; j++ {
+			fmt.Scan(&komentar[ubahIdx-1].isi[j])
 		}
+		sentimen(komentar, jumlahData, jumDataPositif, jumDataNegatif, jumDataNetral, positif, negatif)
+		fmt.Println("==============================================")
+		fmt.Println("|        Komentar berhasil diperbarui        |")
+		fmt.Println("==============================================")
+		daftarKomentar(komentar, jumlahData)
 	}
-	if *jumlahData != 0 {
-		fmt.Println("   Komentar tidak ditemukan!")
+	if ubahIdx > *jumlahData || *jumlahData == 0 {
+		fmt.Println("==============================================")
+		fmt.Println("|           Komentar tidak tersedia          |")
 		fmt.Println("==============================================")
 	}
+	return
+
 }
 func menuKeluar() {
 	fmt.Println("==============================================")
@@ -319,44 +312,52 @@ func menuHapusKomentar(komentar *arrKomentar, jumlahData *int) {
 	fmt.Println("|             MENU HAPUS KOMENTAR            |")
 	fmt.Println("==============================================")
 	daftarKomentar(komentar, jumlahData)
-	fmt.Print("Hapus komen no: ")
+	fmt.Print("   Hapus komen no: ")
 	fmt.Scan(&idxHapus)
 	if idxHapus > 0 && idxHapus <= *jumlahData {
 		for i := idxHapus; i < *jumlahData; i++ {
 			komentar[i-1] = komentar[i]
 		}
+		fmt.Println("==============================================")
+		fmt.Println("|         Komentar berhasil dihapus          |")
+		fmt.Println("==============================================")
 	} else {
+		fmt.Println("==============================================")
 		fmt.Println("|          Komentar tidak ditemukan          |")
+		fmt.Println("==============================================")
 		return
 	}
 	*jumlahData = *jumlahData - 1
-	fmt.Println("   Komentar berhasil dihapus         ")
 	daftarKomentar(komentar, jumlahData)
 	return
 }
 
-func sentimen(komentar *arrKomentar, jumlahData *int) {
+func sentimen(komentar *arrKomentar, jumlahData, jumDataPositif, jumDataNegatif, jumDataNetral *int, positif *arrPositif, negatif *arrNegatif) {
 	/* I.S. Terdefinisi array dinamis arrKomentar, i integer, dan jumlahData integer
 	Proses: Menentukan sentimen dari setiap komentar
 	F.S. Komentar memiliki sentimen positif, netral, atau negatif */
 	var j, k, l int
+
 	for i := 0; i < *jumlahData; i++ {
 		for j = 0; j < komentar[i].jumlahKata; j++ {
 			for k = 0; k < 17; k++ {
-				if komentar[i].isi[j] == komentar[k].positif {
+				if komentar[i].isi[j] == positif[k] {
 					komentar[i].sentimen = "(positif)"
 					komentar[i].jumlahPositif += 1
-				} else if komentar[i].isi[j] == komentar[k].negatif {
+					*jumDataPositif++
+				} else if komentar[i].isi[j] == negatif[k] {
 					komentar[i].sentimen = "(negatif)"
 					komentar[i].jumlahNegatif += 1
+					*jumDataNegatif++
 				}
 			}
 			if komentar[i].isi[j] == "tidak" {
 				for l = 0; l < 17; l++ {
-					if komentar[i].isi[j+1] == komentar[l].positif {
+					if komentar[i].isi[j+1] == positif[k] {
 						komentar[i].sentimen = "(negatif)"
 						komentar[i].jumlahNegatif += 1
 						j++
+						*jumDataNegatif++
 					}
 				}
 			}
@@ -364,8 +365,8 @@ func sentimen(komentar *arrKomentar, jumlahData *int) {
 
 		if (komentar[i].sentimen != "(positif)" && komentar[i].sentimen != "(negatif)") || komentar[i].jumlahPositif == komentar[i].jumlahNegatif {
 			komentar[i].sentimen = "(netral)"
+			*jumDataNetral++
 		}
-
 		j = 0
 	}
 
@@ -398,21 +399,24 @@ func statistik(komentar *arrKomentar, jumlahData *int) {
 	fmt.Println("   2.(Descending) panjang teks")
 	fmt.Println("   3.(Ascending) sentimen")
 	fmt.Println("   4.(Descending) sentimen")
-	for {
-		fmt.Print("   Pilih menu: ")
-		fmt.Scan(&pilihStatistik)
-		switch pilihStatistik {
-		case 1:
-			urutPanjangAsc(komentar, jumlahData)
-		case 2:
-			urutPanjangDesc(komentar, jumlahData)
-		case 3:
-			urutSentimenAsc(komentar, jumlahData)
-		case 4:
-			urutSentimenDesc(komentar, jumlahData)
-		default:
-			fmt.Println("   Masukkan angka yang benar!")
-		}
+	fmt.Println("==============================================")
+	fmt.Print("   Pilih menu: ")
+	fmt.Scan(&pilihStatistik)
+	switch pilihStatistik {
+	case 1:
+		urutPanjangAsc(komentar, jumlahData)
+		return
+	case 2:
+		urutPanjangDesc(komentar, jumlahData)
+		return
+	case 3:
+		urutSentimenAsc(komentar, jumlahData)
+		return
+	case 4:
+		urutSentimenDesc(komentar, jumlahData)
+		return
+	default:
+		fmt.Println("   Masukkan angka yang benar!")
 	}
 }
 
@@ -519,8 +523,8 @@ func nilaiSentimen(komentar *arrKomentar, jumlahData *int) {
 
 }
 
-func menuDaftarKomentar(komentar *arrKomentar, jumlahData *int) {
-	var pilihDaftarKomentar int
+func menuDaftarKomentar(komentar *arrKomentar, jumlahData, jumDataPositif, jumDataNegatif, jumDataNetral *int, positif *arrPositif, negatif *arrNegatif) {
+	var pilihDaftarKomentar, k int
 	tampilanUtama()
 	fmt.Println("|            MENU DAFTAR KOMENTAR            |")
 	fmt.Println("==============================================")
@@ -547,12 +551,15 @@ func menuDaftarKomentar(komentar *arrKomentar, jumlahData *int) {
 					fmt.Printf("%s\n", komentar[i].sentimen)
 				}
 			}
-			fmt.Println("==============================================")
 		case 2:
-			for i := 0; i < *jumlahData; i++ {
-				if komentar[i].sentimen == "(positif)" {
-					for k := 0; k < *jumlahData; k++ {
-						fmt.Printf("   %d. ", k+1)
+			k = 1
+			if *jumDataPositif == 0 {
+				fmt.Println("|          Komentar tidak tersedia!          |")
+			} else {
+				for i := 0; i < *jumlahData; i++ {
+					if komentar[i].sentimen == "(positif)" {
+						fmt.Printf("   %d. ", k)
+						k++
 						for j := 0; j < komentar[i].jumlahKata; j++ {
 							fmt.Printf("%s ", komentar[i].isi[j])
 						}
@@ -560,14 +567,15 @@ func menuDaftarKomentar(komentar *arrKomentar, jumlahData *int) {
 					}
 				}
 			}
-
-			fmt.Println("==============================================")
-
 		case 3:
-			for i := 0; i < *jumlahData; i++ {
-				if komentar[i].sentimen == "(netral)" {
-					for k := 0; k < *jumlahData; k++ {
-						fmt.Printf("   %d. ", k+1)
+			k = 1
+			if *jumDataNetral == 0 {
+				fmt.Println("|          Komentar tidak tersedia!          |")
+			} else {
+				for i := 0; i < *jumlahData; i++ {
+					if komentar[i].sentimen == "(netral)" {
+						fmt.Printf("   %d. ", k)
+						k++
 						for j := 0; j < komentar[i].jumlahKata; j++ {
 							fmt.Printf("%s ", komentar[i].isi[j])
 						}
@@ -575,13 +583,16 @@ func menuDaftarKomentar(komentar *arrKomentar, jumlahData *int) {
 					}
 				}
 			}
-			fmt.Println("==============================================")
 
 		case 4:
-			for i := 0; i < *jumlahData; i++ {
-				if komentar[i].sentimen == "(negatif)" {
-					for k := 0; k < *jumlahData; k++ {
-						fmt.Printf("   %d. ", k+1)
+			k = 1
+			if *jumDataNegatif == 0 {
+				fmt.Println("|          Komentar tidak tersedia!          |")
+			} else {
+				for i := 0; i < *jumlahData; i++ {
+					if komentar[i].sentimen == "(negatif)" {
+						fmt.Printf("   %d. ", k)
+						k++
 						for j := 0; j < komentar[i].jumlahKata; j++ {
 							fmt.Printf("%s ", komentar[i].isi[j])
 						}
@@ -589,11 +600,11 @@ func menuDaftarKomentar(komentar *arrKomentar, jumlahData *int) {
 					}
 				}
 			}
-			fmt.Println("==============================================")
 		default:
 			fmt.Println("   Masukkan angka yang benar!")
 
 		}
+		fmt.Println("==============================================")
 		return
 	}
 }
@@ -663,44 +674,42 @@ func isiKomen(komentar *arrKomentar, jumlahData *int) {
 	komentar[9].jumlahKata = 2
 }
 
-func sentimenPositif(komentar *arrKomentar, jumlahData *int) {
-	komentar[0].positif = "keren"
-	komentar[1].positif = "bagus"
-	komentar[2].positif = "mantap"
-	komentar[3].positif = "hebat"
-	komentar[4].positif = "baik"
-	komentar[5].positif = "top"
-	komentar[6].positif = "sempurna"
-	komentar[7].positif = "jempolan"
-	komentar[8].positif = "brilian"
-	komentar[9].positif = "cerdas"
-	komentar[10].positif = "terbaik"
-	komentar[11].positif = "menawan"
-	komentar[12].positif = "ramah"
-	komentar[13].positif = "asik"
-	komentar[14].positif = "membantu"
-	komentar[15].positif = "menarik"
-	komentar[16].positif = "berkelas"
-
+func sentimenPositif(positif *arrPositif) {
+	positif[0] = "keren"
+	positif[1] = "bagus"
+	positif[2] = "mantap"
+	positif[3] = "hebat"
+	positif[4] = "baik"
+	positif[5] = "top"
+	positif[6] = "sempurna"
+	positif[7] = "jempolan"
+	positif[8] = "brilian"
+	positif[9] = "cerdas"
+	positif[10] = "terbaik"
+	positif[11] = "menawan"
+	positif[12] = "ramah"
+	positif[13] = "asik"
+	positif[14] = "membantu"
+	positif[15] = "menarik"
+	positif[16] = "berkelas"
 }
 
-func sentimenNegatif(komentar *arrKomentar, jumlahData *int) {
-	komentar[0].negatif = "jelek"
-	komentar[1].negatif = "buruk"
-	komentar[2].negatif = "lemah"
-	komentar[3].negatif = "bodoh"
-	komentar[4].negatif = "payah"
-	komentar[5].negatif = "rusak"
-	komentar[6].negatif = "menyebalkan"
-	komentar[7].negatif = "jahat"
-	komentar[8].negatif = "malas"
-	komentar[9].negatif = "busuk"
-	komentar[10].negatif = "gagal"
-	komentar[11].negatif = "bohong"
-	komentar[12].negatif = "palsu"
-	komentar[13].negatif = "sombong"
-	komentar[14].negatif = "menipu"
-	komentar[15].negatif = "seram"
-	komentar[16].negatif = "nyesal"
-
+func sentimenNegatif(negatif *arrNegatif) {
+	negatif[0] = "jelek"
+	negatif[1] = "buruk"
+	negatif[2] = "lemah"
+	negatif[3] = "bodoh"
+	negatif[4] = "payah"
+	negatif[5] = "rusak"
+	negatif[6] = "menyebalkan"
+	negatif[7] = "jahat"
+	negatif[8] = "malas"
+	negatif[9] = "busuk"
+	negatif[10] = "gagal"
+	negatif[11] = "bohong"
+	negatif[12] = "palsu"
+	negatif[13] = "sombong"
+	negatif[14] = "menipu"
+	negatif[15] = "seram"
+	negatif[16] = "nyesal"
 }
